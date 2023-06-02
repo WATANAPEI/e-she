@@ -1,5 +1,6 @@
 import useSWR from 'swr'
-import axios from 'axios'
+import { basicAxiosFetch } from '@/configurations/axiosConfig'
+import { useErrorBoundary } from 'react-error-boundary'
 
 type ProductResponseBody = {
   productId: string
@@ -11,7 +12,7 @@ type ProductResponseBody = {
 }
 
 type ProductResponse = {
-  products: ProductResponseBody[]
+  products?: ProductResponseBody[]
   error: any
   isLoading: boolean
 }
@@ -22,11 +23,16 @@ type StockStatus = 'ENOUGH' | 'LITTLE_LEFT' | 'EMPTY'
 const PRODUCT_EP_URL =
   process.env.PRODUCT_EP_URL ?? 'http://localhost:3000/products'
 
-const fetcher = () => axios.get(PRODUCT_EP_URL).then(res => res.data)
-
 type useProductListType = () => ProductResponse
 
 export const useProductList: useProductListType = () => {
+  const { showBoundary } = useErrorBoundary()
+
+  const fetcher = () =>
+    basicAxiosFetch
+      .get(PRODUCT_EP_URL)
+      .then(res => res.data)
+      .catch(error => showBoundary(error))
   const { data: products, error, isLoading } = useSWR('/products', fetcher)
   return { products, error, isLoading }
 }
